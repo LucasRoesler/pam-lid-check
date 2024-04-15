@@ -1,0 +1,23 @@
+version: 3
+
+tasks:
+  install:
+    cmds:
+      - echo "installing"
+      - sudo cp pam_check_lid /usr/local/bin
+      - sudo chmod +x /usr/local/bin/pam_check_lid
+      #  ensure that this file isn't globally writable
+      - sudo chmod o-w /usr/local/bin/pam_check_lid
+
+  update-pam:
+    cmds:
+      - sudo cp /etc/pam.d/system-auth /etc/pam.d/system-auth-new
+      # edit system-auth to add the following line
+      # auth        [success=ignore default=1]                   pam_exec.so quiet /usr/local/bin/pam_check_lid
+      # above
+      # auth        sufficient                                   pam_fprintd.so
+      - >
+        sudo sed -i
+        '/^auth\s\+sufficient\s\+pam_fprintd.so/i auth [success=ignore default=1] pam_exec.so quiet /usr/local/bin/pam_check_lid'
+        /etc/pam.d/system-auth-new
+      - pamtester system-auth-new $USER authenticate
